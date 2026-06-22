@@ -1,0 +1,71 @@
+From 8ec2059baa9d4d1e37cf9a01859d267afb0b152b Mon Sep 17 00:00:00 2001
+From: Steven Noonan <steven@uplinklabs.net>
+Date: Fri, 19 Nov 2021 16:30:23 -0800
+Subject: [PATCH 22/30] x86: export tsc_khz to userspace
+
+Derived from patch by Redha Gouicem from here:
+
+    https://lkml.org/lkml/2020/12/31/72
+
+Signed-off-by: Steven Noonan <steven@uplinklabs.net>
+---
+ arch/x86/kernel/tsc.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/arch/x86/kernel/tsc.c b/arch/x86/kernel/tsc.c
+index 5a6f5465ae4c9..2a1c2e3b03b2d 100644
+--- a/arch/x86/kernel/tsc.c
++++ b/arch/x86/kernel/tsc.c
+@@ -16,6 +16,7 @@
+ #include <linux/timex.h>
+ #include <linux/static_key.h>
+ #include <linux/static_call.h>
++#include <linux/cpu.h>
+ 
+ #include <asm/cpuid/api.h>
+ #include <asm/hpet.h>
+@@ -1456,6 +1457,15 @@ static int __init init_tsc_clocksource(void)
+  */
+ device_initcall(init_tsc_clocksource);
+ 
++/* sysfs file to export tsc_khz */
++static ssize_t tsc_khz_show(struct kobject *kobj,
++			    struct kobj_attribute *attr, char *buf)
++{
++	return sprintf(buf, "%u\n", tsc_khz);
++}
++
++struct kobj_attribute tsc_khz_attr = __ATTR_RO(tsc_khz);
++
+ static bool __init determine_cpu_tsc_frequencies(bool early)
+ {
+ 	/* Make sure that cpu and tsc are not already calibrated */
+@@ -1579,6 +1589,25 @@ void __init tsc_init(void)
+ 	detect_art();
+ }
+ 
++static int __init tsc_khz_sysfs_init(void)
++{
++	struct device *dev_root = bus_get_dev_root(&cpu_subsys);
++	int ret;
++
++	if (!dev_root)
++		return -EINVAL;
++
++	ret = sysfs_create_file(&dev_root->kobj, &tsc_khz_attr.attr);
++
++	if (!ret)
++		pr_info("tsc_khz exported in sysfs\n");
++	else
++		pr_warn("tsc_khz failed to be exported in sysfs\n");
++
++	return ret;
++}
++late_initcall(tsc_khz_sysfs_init);
++
+ #ifdef CONFIG_SMP
+ /*
+  * Check whether existing calibration data can be reused.
+-- 
+2.54.0
+
