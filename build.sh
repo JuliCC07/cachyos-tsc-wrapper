@@ -19,7 +19,7 @@ cd "$BUILD_DIR/linux-cachyos-bore"
 cp "$PATCHES_DIR/"*.patch .
 
 # Inyectar los nombres de los parches en el PKGBUILD, justo después de "config"
-sed -i 's/"config"/"config"\n    "0017-x86-implement-tsc-directsync-for-systems-without-IA3.patch"\n    "0018-x86-touch-clocksource-watchdog-after-syncing-TSCs.patch"\n    "0019-x86-save-restore-TSC-counter-value-during-sleep-wake.patch"\n    "0020-x86-only-restore-TSC-if-we-have-IA32_TSC_ADJUST-or-d.patch"\n    "0021-x86-don-t-check-for-random-warps-if-using-direct-syn.patch"\n    "0022-x86-export-tsc_khz-to-userspace.patch"/g' PKGBUILD
+sed -i 's/"config"/"config"\n    "0001-x86-implement-tsc-directsync-for-systems-without-IA3.patch"\n    "0002-x86-touch-clocksource-watchdog-after-syncing-TSCs.patch"\n    "0003-x86-save-restore-TSC-counter-value-during-sleep-wake.patch"\n    "0004-x86-only-restore-TSC-if-we-have-IA32_TSC_ADJUST-or-d.patch"\n    "0005-x86-don-t-check-for-random-warps-if-using-direct-syn.patch"\n    "0006-x86-export-tsc_khz-to-userspace.patch"/g' PKGBUILD
 
 # 3. Compilar
 echo "[3/3] Actualizando sumas de control e iniciando compilación..."
