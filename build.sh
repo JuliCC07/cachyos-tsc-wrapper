@@ -3,7 +3,7 @@ set -e
 
 # Variables config
 REPO_URL="https://github.com/CachyOS/linux-cachyos.git"
-BUILD_DIR="/tmp/linux-cachyos-build"
+BUILD_DIR="/var/tmp/linux-cachyos-build"
 PATCHES_DIR="$(pwd)/tsc_patches"
 
 echo "=== TSC-patched CachyOS BORE kernel compiler ==="
