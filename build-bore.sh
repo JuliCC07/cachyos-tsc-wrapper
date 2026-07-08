@@ -15,7 +15,7 @@ git clone --depth 1 "$REPO_URL" "$BUILD_DIR"
 
 # 2. Injecting patches
 echo "[2/3] Copying and injecting TSC patches..."
-cd "$BUILD_DIR/linux-cachyos"
+cd "$BUILD_DIR/linux-cachyos-bore"
 cp "$PATCHES_DIR/"*.patch .
 
 # Injecting patch filenames into PKGBUILD, right after "config"
