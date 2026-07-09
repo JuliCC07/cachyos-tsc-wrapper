@@ -49,11 +49,15 @@ jobs:
           #!/bin/bash
           set -e
 
+          # Init pacman keyring (avoid "no secret key" errors)
+          pacman-key --init || true
+          pacman-key --populate archlinux || true
+
           pacman -Syu --noconfirm
           pacman -S --noconfirm \
             base-devel pacman-contrib git curl bc cpio gettext libelf pahole \
             perl python rust rust-bindgen tar xz zstd xxhash \
-            binutils openssl
+            binutils openssl gnupg
 
           useradd -m builder
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -77,13 +81,20 @@ jobs:
             cp /workspace/tsc_patches/*.patch .
 
             # Inyectar patches tal y como está en el script sh
-            sed -i 's/\"config\"/\"config\"\n    \"0001-x86-implement-tsc-directsync-for-systems-without-IA3.patch\"\n    \"0002-x86-touch-clocksource-watchdog-after-syncing-TSCs.patch\"\n    \"0003-x86-save-restore-TSC-counter-value-during-sleep-wake.patch\"\n    \"0004-x86-only-restore-TSC-if-we-have-IA32_TSC_ADJUST-or-d.patch\"\n    \"0005-x86-don-t-check-for-random-warps-if-using-direct-syn.patch\"\n    \"0006-x86-export-tsc_khz-to-userspace.patch\"/g' PKGBUILD
-
+            sed -i 's/\"config\"/\"config\"\n    \"0001-x86-implement-tsc-directsync-for-systems-without-IA3.patch\"\n    \"0002-x86-touch-clocksource-watchdog-after-syncing-TSCs.patch\"\n    \"00[...]/
             updpkgsums
             makepkg -sc --noconfirm
           "
 
-          cp /tmp/cachyos-repo/linux-cachyos/*.pkg.tar.zst /workspace/
+          # copy built packages to the mounted workspace
+          cp /tmp/cachyos-repo/linux-cachyos/*.pkg.tar.zst /workspace/ || true
+
+          # If HOST_UID/HOST_GID were passed from the runner, chown workspace so
+          # the host runner can write files and commit.
+          if [ -n "${HOST_UID:-}" ] && [ -n "${HOST_GID:-}" ]; then
+            chown -R "${HOST_UID}:${HOST_GID}" /workspace || true
+          fi
+
           EOF
           chmod +x run_build.sh
           
@@ -91,6 +102,8 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             --privileged \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
             archlinux:latest \
             /workspace/run_build.sh
 
