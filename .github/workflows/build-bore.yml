@@ -49,11 +49,15 @@ jobs:
           #!/bin/bash
           set -e
 
+          # Init pacman keyring to avoid "There is no secret key available to sign with." errors
+          pacman-key --init || true
+          pacman-key --populate archlinux || true
+
           pacman -Syu --noconfirm
           pacman -S --noconfirm \
             base-devel pacman-contrib git curl bc cpio gettext libelf pahole \
             perl python rust rust-bindgen tar xz zstd xxhash \
-            binutils openssl
+            binutils openssl gnupg
 
           useradd -m builder
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -82,7 +86,14 @@ jobs:
             makepkg -sc --noconfirm
           "
 
-          cp /tmp/cachyos-repo/linux-cachyos-bore/*.pkg.tar.zst /workspace/
+          # copy built packages to the mounted workspace
+          cp /tmp/cachyos-repo/linux-cachyos-bore/*.pkg.tar.zst /workspace/ || true
+
+          # If HOST_UID/HOST_GID were passed from the runner, chown workspace so
+          # the host runner can write files and commit.
+          if [ -n "${HOST_UID:-}" ] && [ -n "${HOST_GID:-}" ]; then
+            chown -R "${HOST_UID}:${HOST_GID}" /workspace || true
+          fi
           EOF
           chmod +x run_build_bore.sh
           
@@ -90,6 +101,8 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             --privileged \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
             archlinux:latest \
             /workspace/run_build_bore.sh
 
