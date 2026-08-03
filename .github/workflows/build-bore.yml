@@ -19,7 +19,7 @@ jobs:
         id: check
         run: |
           UPSTREAM=$(curl -s https://raw.githubusercontent.com/CachyOS/linux-cachyos/master/linux-cachyos-bore/PKGBUILD \
-            | awk -F'=' '/^pkgver=/{ver=$2} /^pkgrel=/{rel=$2} END{print ver "-" rel}')
+            | grep -E '^(_major|_minor|pkgver|pkgrel)=' | bash -c 'source /dev/stdin; echo "$pkgver-$pkgrel"')
           echo "Upstream: $UPSTREAM"
 
           LAST=""
